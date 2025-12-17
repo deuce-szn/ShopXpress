@@ -1,0 +1,27 @@
+.footer{
+    display: flex;
+    flex-direction: row;
+    justify-content: space-evenly;
+    background-color: #ffffff;
+    padding: 4rem 3rem;
+}
+
+.title{
+    font-size: 1.3rem;
+    font-family: "Hydot-SemiBold";
+    margin-bottom: 2rem;
+}
+
+.theEnd{
+    font-size: 1.3rem;
+    font-family: "Hydot-SemiBold";
+    margin-bottom: 4rem;
+}
+
+@media (max-width: 1024px) {
+    .footer{
+        flex-direction: column;
+        padding: 2rem 1rem;
+    }
+    
+}

@@ -1,0 +1,94 @@
+.login-wrapper {
+  max-width: 400px;
+  margin: 14rem auto;
+  padding: 2rem;
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.login-form h2 {
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+
+.form-group {
+  margin-bottom: 1rem;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 0.25rem;
+  font-weight: 600;
+}
+
+.form-group input {
+  width: 100%;
+  padding: 0.5rem;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+  background: transparent;
+  color: #000;
+}
+
+.password-wrapper {
+  display: flex;
+  align-items: center;
+}
+
+.toggle-btn {
+  margin-left: 0.5rem;
+  font-size: 0.875rem;
+  cursor: pointer;
+  background: none;
+  border: none;
+  color: #ff0000;
+}
+
+.submit-btn {
+  width: 100%;
+  padding: 0.75rem;
+  background: #ff0000;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  font-weight: bold;
+  margin-top: 1rem;
+  cursor: pointer;
+}
+
+.error {
+  color: red;
+  font-size: 0.75rem;
+}
+
+.link-group {
+  text-align: center;
+  margin-top: 1rem;
+}
+
+.link-btn {
+  background: none;
+  color: #ff0000;
+  border: none;
+  font-weight: bold;
+  cursor: pointer;
+  margin-left: 0.25rem;
+}
+
+.animated-fieldset {
+  border: 2px solid #aaa;
+  padding: 8px;
+  border-radius: 6px;
+  transition: all 0.3s ease;
+}
+
+.animated-fieldset legend {
+  font-weight: bold;
+  font-size: 0.9rem;
+  padding: 0 5px;
+}
+
+
+
+

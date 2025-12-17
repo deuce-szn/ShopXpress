@@ -88,6 +88,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       case 'createuser':
         result = await handleCreateUser(formData);
         break;
+      case 'login':
+        result = await handleLogin(formData);
+        break;
       case 'updateuser':
         result = await handleUpdateUser(formData);
         break;
@@ -434,6 +437,79 @@ async function handleCreateCategory(formData: FormData) {
     return { success: false, message: 'Failed to create category', status: 500 };
   }
 }
+
+// ---------------------------------------------------
+// 🧩 Login Handler
+// ---------------------------------------------------
+
+async function handleLogin(formData: FormData) {
+  try {
+    const email = formData.get('email') as string;
+    const password = formData.get('password') as string;
+
+    // Validation
+    if (!email || !validateEmail(email)) {
+      return { success: false, message: 'Valid email is required', status: 400 };
+    }
+
+    if (!password) {
+      return { success: false, message: 'Password is required', status: 400 };
+    }
+
+    // Find user by email
+    const user = await prisma.users.findUnique({
+      where: { email }
+    });
+
+    if (!user) {
+      return { success: false, message: 'Invalid email or password', status: 401 };
+    }
+
+    // Check if user has a password
+    if (!user.Password) {
+      return { success: false, message: 'Account not properly set up. Please contact administrator.', status: 401 };
+    }
+
+    // Decode stored password and compare
+    const storedPassword = Buffer.from(user.Password, 'base64').toString();
+    
+    if (password !== storedPassword) {
+      return { success: false, message: 'Invalid email or password', status: 401 };
+    }
+
+    // Generate new token (JWT implementation would go here)
+    // For now, we'll create a simple token
+    const token = `token_${randomBytes(32).toString('hex')}`;
+    
+    // Update user token in database
+    const updatedUser = await prisma.users.update({
+      where: { email },
+      data: { Token: token }
+    });
+
+    // Remove sensitive data from response
+    const { Password, ...safeUser } = updatedUser;
+
+    return {
+      success: true,
+      message: 'Login successful',
+      data: {
+        user: safeUser,
+        token: token
+      },
+      status: 200
+    };
+  } catch (error: any) {
+    console.error('Login error:', error);
+    
+    if (error.code === 'P2025') {
+      return { success: false, message: 'User not found', status: 404 };
+    }
+    
+    return { success: false, message: 'Failed to login', status: 500 };
+  }
+}
+
 
 async function handleUpdateCategory(formData: FormData) {
   try {
