@@ -25,26 +25,13 @@ const MultiProduct = ({ cate, cateId }) => {
   useEffect(() => {
     setLoading(true);
 
-    const timeout = setTimeout(() => {
-      const filtered = productList.filter(
-        (item) => item.categoryId === cateId
+const filtered = productList.filter(
+        (item) => item.originalData.Category.categoryId === cateId
       );
       setFilteredProducts(filtered);
       setLoading(false);
-    }, 5000); // Simulate loading delay
+  }, [productList, cateId]);
 
-    return () => clearTimeout(timeout);
-  }, [productList, cate, activeIndex]);
-
-  const scroll = (direction) => {
-    if (scrollRef.current) {
-      const scrollAmount = 130 * 4;
-      scrollRef.current.scrollBy({
-        left: direction === 'left' ? -scrollAmount : scrollAmount,
-        behavior: 'smooth',
-      });
-    }
-  };
 
   return (
     <div className="product-container">

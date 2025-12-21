@@ -26,15 +26,12 @@ const { loadProducts, productList, loadCategory, forYouList,forYouProducts } = u
   useEffect(() => {
     setLoading(true);
 
-    const timeout = setTimeout(() => {
-      const filtered = productList.filter(
+    const filtered = productList.filter(
         (item) => item.category === cate
       );
       setFilteredProducts(filtered);
       setLoading(false);
-    }, 5000); // Simulate 1.5s loading
 
-    return () => clearTimeout(timeout);
   }, [activeIndex]);
 
 

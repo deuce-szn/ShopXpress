@@ -66,6 +66,8 @@ function validateEmail(email: string): boolean {
   return emailRegex.test(email);
 }
 
+
+
 // ---------------------------------------------------
 // 🧩 POST Method — Action-Based Handler
 // ---------------------------------------------------
@@ -85,6 +87,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     let result;
 
     switch (action.toLowerCase()) {
+      
       case 'createuser':
         result = await handleCreateUser(formData);
         break;
@@ -99,6 +102,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         break;
       case 'getuser':
         result = await handleGetUser(formData);
+        break;
+      case 'getusers': // ADD THIS
+        result = await handleGetUsers(formData);
         break;
       case 'createcategory':
         result = await handleCreateCategory(formData);
@@ -139,11 +145,20 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       case 'updatepayment':
         result = await handleUpdatePayment(formData);
         break;
+      case 'getpayments': // ADD THIS
+        result = await handleGetPayments(formData);
+        break;
       case 'createbagging':
         result = await handleCreateBagging(formData);
         break;
+      case 'getbagging': // ADD THIS
+        result = await handleGetBagging(formData);
+        break;
       case 'updatedelivery':
         result = await handleUpdateDelivery(formData);
+        break;
+      case 'getdelivery': // ADD THIS
+        result = await handleGetDelivery(formData);
         break;
       case 'bulkcreate':
         result = await handleBulkCreate(formData);
@@ -151,6 +166,26 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       case 'search':
         result = await handleSearch(formData);
         break;
+
+        // Add these to your POST handler switch case
+case 'deleteorder':
+    result = await handleDeleteOrder(formData);
+    break;
+case 'deletepayment':
+    result = await handleDeletePayment(formData);
+    break;
+case 'deletebagging':
+    result = await handleDeleteBagging(formData);
+    break;
+case 'deletedelivery':
+    result = await handleDeleteDelivery(formData);
+    break;
+case 'updatebagging':
+    result = await handleUpdateBagging(formData);
+    break;
+
+// Note: Delivery only has update, not create in your form structure
+
       default:
         return NextResponse.json(
           { success: false, message: "Unknown action", status: 400 },
@@ -166,6 +201,631 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       { success: false, message: errorMessage, status: 500 },
       { status: 500 }
     );
+  }
+}
+
+
+// ---------------------------------------------------
+// 🧩 Delete Order Handler
+// ---------------------------------------------------
+
+async function handleDeleteOrder(formData: FormData) {
+  try {
+    const orderId = formData.get('orderId') as string;
+
+    if (!orderId) {
+      return { success: false, message: 'Order ID is required', status: 400 };
+    }
+
+    // Check if order exists
+    const existingOrder = await prisma.orders.findUnique({
+      where: { orderId }
+    });
+
+    if (!existingOrder) {
+      return { success: false, message: 'Order not found', status: 404 };
+    }
+
+    // Check if there are associated payments
+    const associatedPayments = await prisma.payments.findMany({
+      where: { orderId }
+    });
+
+    if (associatedPayments.length > 0) {
+      return { success: false, message: 'Cannot delete order with existing payments', status: 400 };
+    }
+
+    // Delete order
+    await prisma.orders.delete({
+      where: { orderId }
+    });
+
+    return {
+      success: true,
+      message: 'Order deleted successfully',
+      data: null,
+      status: 200
+    };
+  } catch (error: any) {
+    console.error('Delete order error:', error);
+    
+    if (error.code === 'P2025') {
+      return { success: false, message: 'Order not found', status: 404 };
+    }
+    
+    return { success: false, message: 'Failed to delete order', status: 500 };
+  }
+}
+
+// ---------------------------------------------------
+// 🧩 Delete Payment Handler
+// ---------------------------------------------------
+
+async function handleDeletePayment(formData: FormData) {
+  try {
+    const paymentId = formData.get('paymentId') as string;
+
+    if (!paymentId) {
+      return { success: false, message: 'Payment ID is required', status: 400 };
+    }
+
+    // Check if payment exists
+    const existingPayment = await prisma.payments.findUnique({
+      where: { paymentId }
+    });
+
+    if (!existingPayment) {
+      return { success: false, message: 'Payment not found', status: 404 };
+    }
+
+    // Delete payment
+    await prisma.payments.delete({
+      where: { paymentId }
+    });
+
+    return {
+      success: true,
+      message: 'Payment deleted successfully',
+      data: null,
+      status: 200
+    };
+  } catch (error: any) {
+    console.error('Delete payment error:', error);
+    
+    if (error.code === 'P2025') {
+      return { success: false, message: 'Payment not found', status: 404 };
+    }
+    
+    return { success: false, message: 'Failed to delete payment', status: 500 };
+  }
+}
+
+// ---------------------------------------------------
+// 🧩 Delete Bagging Handler
+// ---------------------------------------------------
+
+async function handleDeleteBagging(formData: FormData) {
+  try {
+    const bagId = formData.get('bagId') as string;
+
+    if (!bagId) {
+      return { success: false, message: 'Bag ID is required', status: 400 };
+    }
+
+    // Check if bagging exists
+    const existingBagging = await prisma.bagging.findUnique({
+      where: { bagId }
+    });
+
+    if (!existingBagging) {
+      return { success: false, message: 'Bagging record not found', status: 404 };
+    }
+
+    // Delete bagging
+    await prisma.bagging.delete({
+      where: { bagId }
+    });
+
+    return {
+      success: true,
+      message: 'Bagging record deleted successfully',
+      data: null,
+      status: 200
+    };
+  } catch (error: any) {
+    console.error('Delete bagging error:', error);
+    
+    if (error.code === 'P2025') {
+      return { success: false, message: 'Bagging record not found', status: 404 };
+    }
+    
+    return { success: false, message: 'Failed to delete bagging record', status: 500 };
+  }
+}
+
+// ---------------------------------------------------
+// 🧩 Delete Delivery Handler
+// ---------------------------------------------------
+
+async function handleDeleteDelivery(formData: FormData) {
+  try {
+    const deliveryId = formData.get('deliveryId') as string;
+
+    if (!deliveryId) {
+      return { success: false, message: 'Delivery ID is required', status: 400 };
+    }
+
+    // Check if delivery exists
+    const existingDelivery = await prisma.delivery.findUnique({
+      where: { deliveryId }
+    });
+
+    if (!existingDelivery) {
+      return { success: false, message: 'Delivery record not found', status: 404 };
+    }
+
+    // Delete delivery
+    await prisma.delivery.delete({
+      where: { deliveryId }
+    });
+
+    return {
+      success: true,
+      message: 'Delivery record deleted successfully',
+      data: null,
+      status: 200
+    };
+  } catch (error: any) {
+    console.error('Delete delivery error:', error);
+    
+    if (error.code === 'P2025') {
+      return { success: false, message: 'Delivery record not found', status: 404 };
+    }
+    
+    return { success: false, message: 'Failed to delete delivery record', status: 500 };
+  }
+}
+
+// ---------------------------------------------------
+// 🧩 Update Bagging Handler
+// ---------------------------------------------------
+
+async function handleUpdateBagging(formData: FormData) {
+  try {
+    const bagId = formData.get('bagId') as string;
+    const customerId = formData.get('customerId') as string;
+    const baggerId = formData.get('baggerId') as string;
+    const productsJson = formData.get('products') as string;
+    const totalItems = formData.get('totalItems') as string;
+    const totalPrice = formData.get('totalPrice') as string;
+
+    if (!bagId) {
+      return { success: false, message: 'Bag ID is required', status: 400 };
+    }
+
+    // Check if bagging exists
+    const existingBagging = await prisma.bagging.findUnique({
+      where: { bagId }
+    });
+
+    if (!existingBagging) {
+      return { success: false, message: 'Bagging record not found', status: 404 };
+    }
+
+    // Prepare update data
+    const updateData: any = {};
+    if (customerId) updateData.CustomerId = customerId;
+    if (baggerId) updateData.BaggerId = baggerId;
+    if (totalItems) {
+      const items = parseInt(totalItems);
+      if (!isNaN(items) && items > 0) {
+        updateData.totalItems = items;
+      }
+    }
+    if (totalPrice) {
+      const price = parseFloat(totalPrice);
+      if (!isNaN(price) && price > 0) {
+        updateData.totalPrice = price;
+      }
+    }
+    
+    if (productsJson) {
+      try {
+        const products = JSON.parse(productsJson);
+        updateData.products = products;
+      } catch (e) {
+        return { success: false, message: 'Invalid products JSON format', status: 400 };
+      }
+    }
+
+    // Update bagging
+    const updatedBagging = await prisma.bagging.update({
+      where: { bagId },
+      data: updateData
+    });
+
+    return {
+      success: true,
+      message: 'Bagging updated successfully',
+      data: updatedBagging,
+      status: 200
+    };
+  } catch (error: any) {
+    console.error('Update bagging error:', error);
+    
+    if (error.code === 'P2025') {
+      return { success: false, message: 'Bagging record not found', status: 404 };
+    }
+    
+    return { success: false, message: 'Failed to update bagging', status: 500 };
+  }
+}
+
+// ---------------------------------------------------
+// 🧩 Create Delivery Handler (if needed)
+// ---------------------------------------------------
+
+// ---------------------------------------------------
+// 🧩 Create Delivery Handler
+// ---------------------------------------------------
+
+async function handleCreateDelivery(formData: FormData) {
+  try {
+    // Get required fields from form data
+    const orderId = formData.get('orderId') as string;
+    const customerId = formData.get('CustomerId') as string;
+    const deliveryAddress = formData.get('deliveryAddress') as string;
+    const deliveryStatus = formData.get('deliveryStatus') as string || 'pending';
+    const deliveryPersonelId = formData.get('DeliveryPersonelId') as string; // Now required
+
+    // Validation - check ALL required fields
+    if (!orderId) {
+      return { success: false, message: 'Order ID is required', status: 400 };
+    }
+    
+    if (!customerId) {
+      return { success: false, message: 'Customer ID is required', status: 400 };
+    }
+    
+    if (!deliveryAddress) {
+      return { success: false, message: 'Delivery address is required', status: 400 };
+    }
+    
+    if (!deliveryPersonelId) { // NEW: Check for this field
+      return { success: false, message: 'Delivery personnel ID is required', status: 400 };
+    }
+
+    // Generate delivery ID if not provided
+    const deliveryId = formData.get('deliveryId') as string || generateId('del');
+
+    // Create delivery with all required fields
+    const newDelivery = await prisma.delivery.create({
+      data: {
+        deliveryId,
+        orderId,
+        CustomerId: customerId,
+        DeliveryPersonelId: deliveryPersonelId, // No longer optional
+        deliveryAddress,
+        deliveryStatus
+      }
+    });
+
+    return {
+      success: true,
+      message: 'Delivery created successfully',
+      data: newDelivery,
+      status: 201
+    };
+  } catch (error: any) {
+    console.error('Create delivery error:', error);
+    
+    // Handle specific Prisma errors
+    if (error.code === 'P2002') {
+      return { success: false, message: 'Delivery ID already exists', status: 409 };
+    }
+    
+    if (error.code === 'P2003') {
+      return { success: false, message: 'Foreign key constraint failed. Check if order/customer exists.', status: 400 };
+    }
+    
+    return { 
+      success: false, 
+      message: error.message || 'Failed to create delivery', 
+      status: 500 
+    };
+  }
+}
+
+// ---------------------------------------------------
+// 🧩 Get Users Handler
+// ---------------------------------------------------
+
+async function handleGetUsers(formData: FormData) {
+  try {
+    const userId = formData.get('userId') as string;
+    const email = formData.get('email') as string;
+    const userRole = formData.get('userRole') as string;
+    const page = parseInt(formData.get('page') as string) || 1;
+    const limit = parseInt(formData.get('limit') as string) || 20;
+    const skip = (page - 1) * limit;
+
+    // Build where clause
+    const where: any = {};
+    
+    if (userId) {
+      where.UserId = userId;
+    }
+    
+    if (email) {
+      where.email = { contains: email, mode: 'insensitive' };
+    }
+    
+    if (userRole) {
+      where.UserRole = userRole;
+    }
+
+    // Get users with pagination
+    const [users, total] = await Promise.all([
+      prisma.users.findMany({
+        where,
+        select: {
+          id: true,
+          email: true,
+          UserId: true,
+          name: true,
+          ProfilePic: true,
+          UserRole: true,
+          GRole: true,
+          createdAt: true,
+          updatedAt: true
+        },
+        orderBy: {
+          createdAt: 'desc'
+        },
+        skip,
+        take: limit
+      }),
+      prisma.users.count({ where })
+    ]);
+
+    // Remove sensitive data from response
+    const safeUsers = users.map(user => {
+      const { ...safeUser } = user;
+      return safeUser;
+    });
+
+    return {
+      success: true,
+      message: 'Users retrieved successfully',
+      data: {
+        users: safeUsers,
+        pagination: {
+          page,
+          limit,
+          total,
+          pages: Math.ceil(total / limit),
+          hasNext: page * limit < total,
+          hasPrev: page > 1
+        }
+      },
+      status: 200
+    };
+  } catch (error) {
+    console.error('Get users error:', error);
+    return { success: false, message: 'Failed to retrieve users', status: 500 };
+  }
+}
+
+// ---------------------------------------------------
+// 🧩 Get Payments Handler
+// ---------------------------------------------------
+
+async function handleGetPayments(formData: FormData) {
+  try {
+    const paymentId = formData.get('paymentId') as string;
+    const orderId = formData.get('orderId') as string;
+    const userId = formData.get('userId') as string;
+    const paymentStatus = formData.get('paymentStatus') as string;
+    const startDate = formData.get('startDate') as string;
+    const endDate = formData.get('endDate') as string;
+    const page = parseInt(formData.get('page') as string) || 1;
+    const limit = parseInt(formData.get('limit') as string) || 20;
+    const skip = (page - 1) * limit;
+
+    // Build where clause
+    const where: any = {};
+    
+    if (paymentId) {
+      where.paymentId = paymentId;
+    }
+    
+    if (orderId) {
+      where.orderId = orderId;
+    }
+    
+    if (userId) {
+      where.userId = userId;
+    }
+    
+    if (paymentStatus) {
+      where.paymentStatus = paymentStatus;
+    }
+    
+    if (startDate || endDate) {
+      where.createdAt = {};
+      if (startDate) where.createdAt.gte = new Date(startDate);
+      if (endDate) where.createdAt.lte = new Date(endDate);
+    }
+
+    // Get payments with pagination
+    const [payments, total] = await Promise.all([
+      prisma.payments.findMany({
+        where,
+        orderBy: {
+          createdAt: 'desc'
+        },
+        skip,
+        take: limit
+      }),
+      prisma.payments.count({ where })
+    ]);
+
+    return {
+      success: true,
+      message: 'Payments retrieved successfully',
+      data: {
+        payments,
+        pagination: {
+          page,
+          limit,
+          total,
+          pages: Math.ceil(total / limit),
+          hasNext: page * limit < total,
+          hasPrev: page > 1
+        }
+      },
+      status: 200
+    };
+  } catch (error) {
+    console.error('Get payments error:', error);
+    return { success: false, message: 'Failed to retrieve payments', status: 500 };
+  }
+}
+
+// ---------------------------------------------------
+// 🧩 Get Bagging Handler
+// ---------------------------------------------------
+
+async function handleGetBagging(formData: FormData) {
+  try {
+    const bagId = formData.get('bagId') as string;
+    const customerId = formData.get('customerId') as string;
+    const baggerId = formData.get('baggerId') as string;
+    const startDate = formData.get('startDate') as string;
+    const endDate = formData.get('endDate') as string;
+    const page = parseInt(formData.get('page') as string) || 1;
+    const limit = parseInt(formData.get('limit') as string) || 20;
+    const skip = (page - 1) * limit;
+
+    // Build where clause
+    const where: any = {};
+    
+    if (bagId) {
+      where.bagId = bagId;
+    }
+    
+    if (customerId) {
+      where.CustomerId = customerId;
+    }
+    
+    if (baggerId) {
+      where.BaggerId = baggerId;
+    }
+    
+    if (startDate || endDate) {
+      where.createdAt = {};
+      if (startDate) where.createdAt.gte = new Date(startDate);
+      if (endDate) where.createdAt.lte = new Date(endDate);
+    }
+
+    // Get bagging records with pagination
+    const [bagging, total] = await Promise.all([
+      prisma.bagging.findMany({
+        where,
+        orderBy: {
+          createdAt: 'desc'
+        },
+        skip,
+        take: limit
+      }),
+      prisma.bagging.count({ where })
+    ]);
+
+    return {
+      success: true,
+      message: 'Bagging records retrieved successfully',
+      data: {
+        bagging,
+        pagination: {
+          page,
+          limit,
+          total,
+          pages: Math.ceil(total / limit),
+          hasNext: page * limit < total,
+          hasPrev: page > 1
+        }
+      },
+      status: 200
+    };
+  } catch (error) {
+    console.error('Get bagging error:', error);
+    return { success: false, message: 'Failed to retrieve bagging records', status: 500 };
+  }
+}
+
+// ---------------------------------------------------
+// 🧩 Get Delivery Handler
+// ---------------------------------------------------
+
+async function handleGetDelivery(formData: FormData) {
+  try {
+    const deliveryId = formData.get('deliveryId') as string;
+    const deliveryStatus = formData.get('deliveryStatus') as string;
+    const startDate = formData.get('startDate') as string;
+    const endDate = formData.get('endDate') as string;
+    const page = parseInt(formData.get('page') as string) || 1;
+    const limit = parseInt(formData.get('limit') as string) || 20;
+    const skip = (page - 1) * limit;
+
+    // Build where clause
+    const where: any = {};
+    
+    if (deliveryId) {
+      where.deliveryId = deliveryId;
+    }
+    
+    if (deliveryStatus) {
+      where.deliveryStatus = deliveryStatus;
+    }
+    
+    if (startDate || endDate) {
+      where.createdAt = {};
+      if (startDate) where.createdAt.gte = new Date(startDate);
+      if (endDate) where.createdAt.lte = new Date(endDate);
+    }
+
+    // Get delivery records with pagination
+    const [delivery, total] = await Promise.all([
+      prisma.delivery.findMany({
+        where,
+        orderBy: {
+          createdAt: 'desc'
+        },
+        skip,
+        take: limit
+      }),
+      prisma.delivery.count({ where })
+    ]);
+
+    return {
+      success: true,
+      message: 'Delivery records retrieved successfully',
+      data: {
+        delivery,
+        pagination: {
+          page,
+          limit,
+          total,
+          pages: Math.ceil(total / limit),
+          hasNext: page * limit < total,
+          hasPrev: page > 1
+        }
+      },
+      status: 200
+    };
+  } catch (error) {
+    console.error('Get delivery error:', error);
+    return { success: false, message: 'Failed to retrieve delivery records', status: 500 };
   }
 }
 
@@ -1507,7 +2167,8 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
               createdAt: true,
               updatedAt: true
             },
-            orderBy: { createdAt: 'desc' }
+            orderBy: { createdAt: 'desc' },
+            take: 100
           });
           result = { success: true, message: 'Users retrieved successfully', data: users, status: 200 };
         }
@@ -1525,7 +2186,8 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
         } else {
           const categories = await prisma.category.findMany({
             include: { products: true },
-            orderBy: { createdAt: 'desc' }
+            orderBy: { createdAt: 'desc' },
+            take: 100
           });
           result = { success: true, message: 'Categories retrieved successfully', data: categories, status: 200 };
         }
@@ -1561,9 +2223,60 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
         } else {
           const orders = await prisma.orders.findMany({
             orderBy: { createdAt: 'desc' },
-            take: 50
+            take: 100
           });
           result = { success: true, message: 'Orders retrieved successfully', data: orders, status: 200 };
+        }
+        break;
+
+      case 'payments': // ADD THIS
+        if (id) {
+          const payment = await prisma.payments.findUnique({
+            where: { paymentId: id }
+          });
+          result = payment 
+            ? { success: true, message: 'Payment retrieved successfully', data: payment, status: 200 }
+            : { success: false, message: 'Payment not found', status: 404 };
+        } else {
+          const payments = await prisma.payments.findMany({
+            orderBy: { createdAt: 'desc' },
+            take: 100
+          });
+          result = { success: true, message: 'Payments retrieved successfully', data: payments, status: 200 };
+        }
+        break;
+
+      case 'bagging': // ADD THIS
+        if (id) {
+          const bagging = await prisma.bagging.findUnique({
+            where: { bagId: id }
+          });
+          result = bagging 
+            ? { success: true, message: 'Bagging record retrieved successfully', data: bagging, status: 200 }
+            : { success: false, message: 'Bagging record not found', status: 404 };
+        } else {
+          const bagging = await prisma.bagging.findMany({
+            orderBy: { createdAt: 'desc' },
+            take: 100
+          });
+          result = { success: true, message: 'Bagging records retrieved successfully', data: bagging, status: 200 };
+        }
+        break;
+
+      case 'delivery': // ADD THIS
+        if (id) {
+          const delivery = await prisma.delivery.findUnique({
+            where: { deliveryId: id }
+          });
+          result = delivery 
+            ? { success: true, message: 'Delivery record retrieved successfully', data: delivery, status: 200 }
+            : { success: false, message: 'Delivery record not found', status: 404 };
+        } else {
+          const delivery = await prisma.delivery.findMany({
+            orderBy: { createdAt: 'desc' },
+            take: 100
+          });
+          result = { success: true, message: 'Delivery records retrieved successfully', data: delivery, status: 200 };
         }
         break;
 
